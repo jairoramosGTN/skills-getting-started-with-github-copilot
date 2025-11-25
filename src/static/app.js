@@ -27,7 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="participants-section">
               <strong>Participants:</strong>
               <ul class="participants-list">
-                ${details.participants.map(p => `<li>${p}</li>`).join("")}
+                ${details.participants.map((p, idx) => `
+                  <li class="participant-item">
+                    <span class="participant-name">${p}</span>
+                    <span class="delete-icon" title="Eliminar" data-activity="${name}" data-index="${idx}">&#128465;</span>
+                  </li>
+                `).join("")}
               </ul>
             </div>
           `;
@@ -49,6 +54,31 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         activitiesList.appendChild(activityCard);
+        // Evento para eliminar participante
+        activityCard.addEventListener("click", function(e) {
+          if (e.target.classList.contains("delete-icon")) {
+            const activityName = e.target.getAttribute("data-activity");
+            const participantIndex = e.target.getAttribute("data-index");
+            unregisterParticipant(activityName, participantIndex);
+          }
+        });
+  // Función para eliminar participante
+  async function unregisterParticipant(activityName, participantIndex) {
+    try {
+      const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index: participantIndex })
+      });
+      if (response.ok) {
+        fetchActivities();
+      } else {
+        alert("No se pudo eliminar el participante.");
+      }
+    } catch (error) {
+      alert("Error al eliminar el participante.");
+    }
+  }
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -83,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
